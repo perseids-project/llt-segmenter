@@ -16,6 +16,7 @@ module LLT
       {
         indexing: true,
         newline_boundary: 2,
+        semicolon_delimiter: true,
         xml: false
       }
     end
@@ -55,6 +56,13 @@ module LLT
                        [\?!:·]|((?<!&amp|&quot|&apos|&lt|&gt);)|
                        (?<!#{AWB})\.(?=\s(<.*?>\s)?[A-Z])(?!\s[A-Z]\w+\.)
                       /x
+
+    # this version excludes the semicolon
+    SENTENCE_CLOSER_ALT = /(?<!#{AWB}|#{NUMBERS})\.(?!\.)|
+                           [\?!:·]|
+                           (?<!#{AWB})\.(?=\s(<.*?>\s)?[A-Z])(?!\s[A-Z]\w+\.)
+                          /x
+
     DIRECT_SPEECH_DELIMITER = /['"”]|&(?:apos|quot);/
     TRAILERS = /\)|\s*<\/.*?>/
 
@@ -73,6 +81,7 @@ module LLT
     def setup(options)
       @xml = parse_option(:xml, options)
       @indexing = parse_option(:indexing, options)
+      @semicolon = parse_option(:semicolon_delimiter, options)
       @id = 0 if @indexing
 
       # newline_boundary is only active when we aren't working with xml!
@@ -82,7 +91,8 @@ module LLT
     end
 
     def build_sentence_closer_regexp(nl_boundary)
-      @xml ? SENTENCE_CLOSER : Regexp.union(SENTENCE_CLOSER, /\n{#{nl_boundary}}/)
+      closer = @semicolon ? SENTENCE_CLOSER : SENTENCE_CLOSER_ALT
+      @xml ? closer : Regexp.union(closer, /\n{#{nl_boundary}}/)
     end
 
     # Used to normalized wonky whitespace in front of or behind direct speech
@@ -186,6 +196,7 @@ module LLT
     end
 
     def do_scan(scanner, sentences)
+      puts "scan #{scanner.peek(20)} until #{@sentence_closer.inspect}"
       scanner.scan_until(@sentence_closer) ||
         rescue_no_delimiters(sentences, scanner)
     end

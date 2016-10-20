@@ -544,5 +544,18 @@ describe LLT::Segmenter do
         segmenter.segment("", add_to: object)
       end
     end
+    context "without semicolons" do
+      it "ignores semicolons in xml" do
+        txt = load_fixture('petrov_eleg01_cleaned.xml')
+        sentences = segmenter.segment(txt, xml: true, semicolon_delimiter:false)
+        sentences.should_not be_empty
+        sentences.should have(50).items
+      end
+      it "ignores semicolons in text" do
+        sentences = segmenter.segment("est sum mare; est sum mare.", semicolon_delimiter:false)
+        sentences.should have(1).item
+        sentences.first.should be_a LLT::Sentence
+      end
+    end
   end
 end
